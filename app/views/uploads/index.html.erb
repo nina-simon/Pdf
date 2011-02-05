@@ -1,0 +1,52 @@
+<%= javascript_include_tag "swfobject.js", "jquery.uploadify.v2.1.0.js" %>
+<script type="text/javascript" charset="utf-8">
+<%- session_key = Rails.application.config.session_options[:key] -%>
+  $(document).ready(function() {
+
+  $('#upload_photo').click(function(event){
+  event.preventDefault();
+  });
+
+  $('#upload_photo').uploadify({
+  uploader : '/uploadify/uploadify.swf',
+  cancelImg : '/uploadify/cancel.png',
+  multi : true,
+  auto : true,
+  script : '/uploads',
+  onComplete : function(event, queueID, fileObj, response, data) {
+  var dat = eval('(' + response + ')');
+  $('#messege').html(dat.result);
+  if(dat.status){
+  $('#uploaded_pdfs').html('<a href="/uploads/'+dat.id+'"><img src="/images/pdfLogo.gif"> '+ dat.file_name+'</a><a rel="nofollow" data-method="delete" data-confirm="Are you sure?" href="/uploads/'+dat.id+'"> (delete)</a>'+'<br/>'+$('#uploaded_pdfs').html());
+  }
+  },
+  scriptData : {
+  '_http_accept': 'application/javascript',
+  'format' : 'json',
+  '_method': 'post',
+  '<%= session_key %>' : encodeURIComponent('<%= u cookies[session_key] %>'),
+  'authenticity_token': encodeURIComponent('<%= u form_authenticity_token %>')
+  }
+  });
+
+  $('#upload_submit').click(function(event){
+  event.preventDefault();
+  $('#upload_photo').uploadifyUpload();
+  });
+
+  });
+</script>
+
+<div id="messege"></div>
+<%= form_for Upload.new, :html => {:multipart => true} do |f| %>
+  <p>
+    <%= f.file_field :photo %>
+  </p>
+<%end%>
+<div id="uploaded_pdfs">
+  <%@uploads.each do |upload|%>
+    <a href="/uploads/<%=upload.id%>"><%= image_tag "pdfLogo.gif" %> <%= upload.photo_file_name %></a>
+    <%= link_to ' (delete)', upload, :confirm => 'Are you sure?', :method => :delete %>
+    <br />
+  <%end%>
+</div>
